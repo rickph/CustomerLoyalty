@@ -1,4 +1,4 @@
-import { CONSTRUCT_SECTIONS, DEMOGRAPHIC_FIELDS, SCREENING_QUESTIONS } from "@/lib/survey/questionnaire";
+import { CONSTRUCT_SECTIONS, PROFILE_FIELDS } from "@/lib/survey/questionnaire";
 import type { Option } from "@/lib/survey/types";
 
 export type BarDatum = { label: string; value: number; count?: number };
@@ -44,18 +44,21 @@ function breakdownBySource(
 }
 
 export function computeDemographicBreakdowns(rows: AnalyticsRow[]) {
-  return Object.values(DEMOGRAPHIC_FIELDS)
-    .filter((f) => "options" in f)
+  return Object.values(PROFILE_FIELDS)
+    .filter(
+      (f): f is Extract<typeof f, { kind: "choice" }> =>
+        f.kind === "choice" && f.id !== PROFILE_FIELDS.gymType.id
+    )
     .map((f) => ({
       title: f.text,
-      data: breakdownBySource(rows, "demographics", f.id, f.options as unknown as Option[]),
+      data: breakdownBySource(rows, "demographics", f.id, f.options as Option[]),
     }));
 }
 
 export function computeGymTypeBreakdown(rows: AnalyticsRow[]): BarDatum[] | null {
-  const gymTypeQuestion = SCREENING_QUESTIONS.find((q) => q.id === "gym_type");
-  if (!gymTypeQuestion) return null;
-  return breakdownBySource(rows, "screening", "gym_type", gymTypeQuestion.options);
+  const gymTypeField = PROFILE_FIELDS.gymType;
+  if (gymTypeField.kind !== "choice") return null;
+  return breakdownBySource(rows, "demographics", gymTypeField.id, gymTypeField.options);
 }
 
 export function computeRegionBreakdown(rows: { region_name: string | null }[]): BarDatum[] {

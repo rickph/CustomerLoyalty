@@ -5,7 +5,7 @@ import { Controller, useForm, type Path, type Resolver, type SubmitHandler } fro
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CONSTRUCT_SECTIONS,
-  DEMOGRAPHIC_FIELDS,
+  PROFILE_FIELDS,
   SCREENING_QUESTIONS,
 } from "@/lib/survey/questionnaire";
 import { surveyResponseSchema } from "@/lib/survey/schema";
@@ -58,7 +58,7 @@ const emptyLocation: LocationValues = {
 const defaultValues: FormValues = {
   screening: Object.fromEntries(SCREENING_QUESTIONS.map((q) => [q.id, ""])),
   demographics: {
-    ...Object.fromEntries(Object.values(DEMOGRAPHIC_FIELDS).map((f) => [f.id, ""])),
+    ...Object.fromEntries(Object.values(PROFILE_FIELDS).map((f) => [f.id, ""])),
     location: emptyLocation,
   },
   answers: Object.fromEntries(CONSTRUCT_SECTIONS.flatMap((s) => s.items.map((i) => [i.id, undefined]))),
@@ -194,7 +194,7 @@ export function SurveyWizard() {
 
     if (step.kind === "demographics") {
       const fieldNames = [
-        ...Object.values(DEMOGRAPHIC_FIELDS).map((f) => path(`demographics.${f.id}`)),
+        ...Object.values(PROFILE_FIELDS).map((f) => path(`demographics.${f.id}`)),
         path("demographics.location.regionCode"),
         path("demographics.location.provinceCode"),
         path("demographics.location.cityCode"),
@@ -229,9 +229,9 @@ export function SurveyWizard() {
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center gap-4">
           <h1 className="text-xl font-semibold">Thanks for your time</h1>
           <p className="text-foreground/70 max-w-sm">
-            This survey is only for current or recent (past 12 months) fitness gym members in the
-            Philippines, so we won&apos;t be able to include your response. We appreciate you
-            stopping by!
+            This survey is only for current, active fitness-firm members in the Philippines who
+            have been members for at least three months, so we won&apos;t be able to include your
+            response. We appreciate you stopping by!
           </p>
         </div>
       </WizardShell>
@@ -340,29 +340,53 @@ export function SurveyWizard() {
             collected.
           </p>
           <div className="flex flex-col gap-8">
-            {Object.values(DEMOGRAPHIC_FIELDS).map((f) => (
+            {Object.values(PROFILE_FIELDS).map((f) => (
               <div key={f.id}>
                 <p className="text-base font-medium mb-3">{f.text}</p>
-                <Controller
-                  control={control}
-                  name={path(`demographics.${f.id}`)}
-                  render={({ field }) => (
-                    <ChoiceButtons
-                      name={f.id}
-                      options={f.options as unknown as { value: string; label: string }[]}
-                      value={field.value as string}
-                      onChange={field.onChange}
-                      columns={2}
-                      error={fieldError(errors, ["demographics", f.id])}
-                    />
-                  )}
-                />
+                {f.kind === "choice" ? (
+                  <Controller
+                    control={control}
+                    name={path(`demographics.${f.id}`)}
+                    render={({ field }) => (
+                      <ChoiceButtons
+                        name={f.id}
+                        options={f.options}
+                        value={field.value as string}
+                        onChange={field.onChange}
+                        columns={2}
+                        error={fieldError(errors, ["demographics", f.id])}
+                      />
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    control={control}
+                    name={path(`demographics.${f.id}`)}
+                    render={({ field }) => (
+                      <div>
+                        <input
+                          type={f.kind === "number" ? "number" : "text"}
+                          inputMode={f.kind === "number" ? "numeric" : undefined}
+                          placeholder={f.placeholder}
+                          value={(field.value as string) ?? ""}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="w-full min-h-14 rounded-xl border border-border bg-surface px-4 text-base"
+                        />
+                        {fieldError(errors, ["demographics", f.id]) && (
+                          <p className="mt-2 text-sm text-danger" role="alert">
+                            {fieldError(errors, ["demographics", f.id])}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  />
+                )}
               </div>
             ))}
 
             <div>
               <p className="text-base font-medium mb-3">
-                Where do you currently live? (used only for regional analysis)
+                Administrative region and location where your fitness firm is located
               </p>
               <Controller
                 control={control}

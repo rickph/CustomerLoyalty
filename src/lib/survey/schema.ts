@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CONSTRUCT_SECTIONS, DEMOGRAPHIC_FIELDS, SCREENING_QUESTIONS } from "./questionnaire";
+import { CONSTRUCT_SECTIONS, PROFILE_FIELDS, SCREENING_QUESTIONS } from "./questionnaire";
 
 const likertFieldShape: Record<string, z.ZodTypeAny> = {};
 for (const section of CONSTRUCT_SECTIONS) {
@@ -26,12 +26,24 @@ export const locationSchema = z.object({
   cityName: z.string().min(1),
 });
 
+const numericFieldIds = new Set(
+  Object.values(PROFILE_FIELDS)
+    .filter((f) => f.kind === "number")
+    .map((f) => f.id)
+);
+
+const demographicsFieldShape: Record<string, z.ZodTypeAny> = {};
+for (const field of Object.values(PROFILE_FIELDS)) {
+  demographicsFieldShape[field.id] = numericFieldIds.has(field.id)
+    ? z
+        .string()
+        .min(1, "Please enter a value.")
+        .regex(/^\d+$/, "Please enter a whole number.")
+    : z.string().min(1, "Please select an option.");
+}
+
 export const demographicsSchema = z.object({
-  [DEMOGRAPHIC_FIELDS.ageBracket.id]: z.string().min(1, "Please select an option."),
-  [DEMOGRAPHIC_FIELDS.sex.id]: z.string().min(1, "Please select an option."),
-  [DEMOGRAPHIC_FIELDS.monthlyIncome.id]: z.string().min(1, "Please select an option."),
-  [DEMOGRAPHIC_FIELDS.membershipDuration.id]: z.string().min(1, "Please select an option."),
-  [DEMOGRAPHIC_FIELDS.visitFrequency.id]: z.string().min(1, "Please select an option."),
+  ...demographicsFieldShape,
   location: locationSchema,
 });
 

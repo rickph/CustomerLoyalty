@@ -1,4 +1,4 @@
-import { CONSTRUCT_SECTIONS, DEMOGRAPHIC_FIELDS, SCREENING_QUESTIONS } from "@/lib/survey/questionnaire";
+import { CONSTRUCT_SECTIONS, PROFILE_FIELDS, SCREENING_QUESTIONS } from "@/lib/survey/questionnaire";
 
 export type ResponseRow = {
   id: string;
@@ -11,7 +11,7 @@ export type ResponseRow = {
   answers: Record<string, number>;
 };
 
-const demographicFieldIds = Object.values(DEMOGRAPHIC_FIELDS).map((f) => f.id);
+const demographicFieldIds = Object.values(PROFILE_FIELDS).map((f) => f.id);
 
 function csvEscape(value: unknown): string {
   const str = value === null || value === undefined ? "" : String(value);
