@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, isValidAdminSessionToken } from "@/lib/admin/auth";
 import { getDb } from "@/lib/db/client";
 import { responsesToCsv, type ResponseRow } from "@/lib/admin/csv";
+import { applyFilters, parseFilters } from "@/lib/admin/filters";
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch responses." }, { status: 500 });
   }
 
-  const csv = responsesToCsv(rows);
+  // Same query string as the dashboard, so the file matches what was on screen.
+  const csv = responsesToCsv(applyFilters(rows, parseFilters(Object.fromEntries(req.nextUrl.searchParams))));
   const filename = `gym-loyalty-survey-responses-${new Date().toISOString().slice(0, 10)}.csv`;
 
   return new NextResponse(csv, {

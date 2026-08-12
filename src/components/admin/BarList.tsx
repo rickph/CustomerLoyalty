@@ -6,6 +6,8 @@ type BarListProps = {
   max?: number;
   /** How to render the value at the end of each bar. */
   valueFormat?: (value: number, total: number) => string;
+  /** CSS colour for the fill. Defaults to the first series hue. */
+  color?: string;
 };
 
 /**
@@ -14,7 +16,7 @@ type BarListProps = {
  * palette is needed), value always shown as text so the data is never
  * hover-only.
  */
-export function BarList({ data, max, valueFormat }: BarListProps) {
+export function BarList({ data, max, valueFormat, color = "var(--series-quality)" }: BarListProps) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const scaleMax = max ?? Math.max(1, ...data.map((d) => d.value));
 
@@ -35,8 +37,8 @@ export function BarList({ data, max, valueFormat }: BarListProps) {
             </div>
             <div className="h-2.5 w-full rounded-full bg-border overflow-hidden">
               <div
-                className="h-full rounded-full bg-brand transition-[width] group-hover:opacity-80"
-                style={{ width: `${pct}%` }}
+                className="h-full rounded-full transition-[width] group-hover:opacity-80"
+                style={{ width: `${pct}%`, background: color }}
               />
             </div>
           </div>

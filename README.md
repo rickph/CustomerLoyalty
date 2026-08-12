@@ -6,9 +6,6 @@ picker, autosaves progress on-device, stores responses in a Railway Postgres
 database, and has a password-protected `/admin` page to check response
 counts and export a CSV for SPSS/Excel.
 
-**The questionnaire content is currently a placeholder.** See
-[Swapping in the final questionnaire](#swapping-in-the-final-questionnaire) below.
-
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind CSS
@@ -58,21 +55,21 @@ counts and export a CSV for SPSS/Excel.
    [http://localhost:3000/admin](http://localhost:3000/admin) for the
    response dashboard.
 
-## Swapping in the final questionnaire
+## Editing the questionnaire
 
-Everything the survey renders (screening questions, demographics, Likert
+Everything the survey renders (screening questions, profile fields, Likert
 constructs and items) is driven by a single file:
 
 **[`src/lib/survey/questionnaire.ts`](src/lib/survey/questionnaire.ts)**
 
-To load the final instrument, edit the arrays in that file:
-
-- `SCREENING_QUESTIONS` — eligibility gate (e.g. "are you a gym member?")
-- `DEMOGRAPHIC_FIELDS` — respondent profile questions
-- `CONSTRUCT_SECTIONS` — one entry per construct (Service Quality,
-  Satisfaction, Loyalty, etc.), each with its own list of Likert items; the
-  wizard automatically renders one step per section, so adding/removing/
-  renaming constructs or items needs no other code changes
+- `SCREENING_QUESTIONS` — informed consent + eligibility gate ("No" on any
+  item disqualifies)
+- `PROFILE_FIELDS` — respondent profile questions (choice/number/text)
+- `CONSTRUCT_SECTIONS` — one entry per dimension (e.g. Service Quality —
+  Tangibles), each with its own list of Likert items and a `part` field
+  grouping it back into its construct; the wizard automatically renders one
+  step per section, so adding/removing/renaming dimensions or items needs no
+  other code changes
 
 Keep each `id` short, unique, and stable — those ids become the column
 names in the exported CSV, so renaming an id after collecting responses
