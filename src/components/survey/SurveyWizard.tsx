@@ -15,6 +15,7 @@ import { LikertRow } from "./LikertRow";
 import { LocationPicker } from "./LocationPicker";
 import { WizardShell } from "./WizardShell";
 import { WizardNav } from "./WizardNav";
+import { WelcomeStep } from "./WelcomeStep";
 
 type LocationValues = {
   regionCode: string;
@@ -165,7 +166,7 @@ export function SurveyWizard() {
   };
 
   const submitForm = handleSubmit(onValidSubmit, () => {
-    setSubmitError("Please review your answers — some are missing.");
+    setSubmitError("Please review your answers. Some items are still blank.");
   });
 
   async function handleNext() {
@@ -227,11 +228,11 @@ export function SurveyWizard() {
     return (
       <WizardShell>
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center gap-4">
-          <h1 className="text-xl font-semibold">Thanks for your time</h1>
+          <h1 className="text-xl font-semibold">Thank you for your interest</h1>
           <p className="text-foreground/70 max-w-sm">
-            This survey is only for current, active fitness-firm members in the Philippines who
-            have been members for at least three months, so we won&apos;t be able to include your
-            response. We appreciate you stopping by!
+            This study is limited to individuals who are at least 18 years old, currently residing
+            in the Philippines, and active members of a fitness firm for at least three months.
+            Based on your answers, your responses cannot be included. Thank you for your time.
           </p>
         </div>
       </WizardShell>
@@ -245,10 +246,10 @@ export function SurveyWizard() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-soft text-brand text-2xl">
             ✓
           </div>
-          <h1 className="text-xl font-semibold">Thank you!</h1>
+          <h1 className="text-xl font-semibold">Thank you for participating</h1>
           <p className="text-foreground/70 max-w-sm">
-            Your response has been recorded. Thank you for helping with this research on customer
-            loyalty in Philippine fitness gyms.
+            Your response has been recorded. Your participation contributes to research on
+            customer loyalty among members of fitness firms in the Philippines.
           </p>
         </div>
       </WizardShell>
@@ -264,7 +265,12 @@ export function SurveyWizard() {
       progress={
         step.kind === "consent"
           ? undefined
-          : { current: progressCurrent, total: progressTotal, label: stepLabel(step) }
+          : {
+              current: progressCurrent,
+              total: progressTotal,
+              label: stepLabel(step),
+              ...(step.kind === "construct" ? sectionPosition(step.section) : {}),
+            }
       }
       headerAction={
         step.kind !== "consent" ? (
@@ -301,7 +307,7 @@ export function SurveyWizard() {
         </>
       }
     >
-      {step.kind === "consent" && <ConsentStep />}
+      {step.kind === "consent" && <WelcomeStep />}
 
       {step.kind === "screening" && (
         <div>
@@ -438,32 +444,27 @@ export function SurveyWizard() {
   );
 }
 
-function ConsentStep() {
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Fitness Gym Membership Survey</h1>
-      <p className="text-foreground/70">
-        This survey is part of an academic thesis studying customer loyalty among fitness gym
-        members across the Philippines. It should take about 5–7 minutes to complete.
-      </p>
-      <ul className="text-sm text-foreground/70 list-disc pl-5 flex flex-col gap-1.5">
-        <li>Your participation is completely voluntary.</li>
-        <li>Responses are anonymous and used for academic research purposes only.</li>
-        <li>You may stop at any time; your progress is saved automatically on this device.</li>
-      </ul>
-      <p className="text-foreground/70">
-        By tapping &ldquo;Begin Survey&rdquo; below, you confirm you are 18 years or older and
-        agree to participate.
-      </p>
-    </div>
-  );
-}
 
 function stepLabel(step: Step): string {
   if (step.kind === "screening") return "Eligibility";
   if (step.kind === "demographics") return "About You";
-  if (step.kind === "construct") return step.section.title;
+  if (step.kind === "construct") {
+    // Section titles read "Service Quality — Tangibles"; the construct is
+    // already shown by the progress pills, so display only the dimension.
+    const { title } = step.section;
+    return title.includes("—") ? title.split("—").slice(1).join("—").trim() : title;
+  }
   return "";
+}
+
+/** Where this dimension sits inside its construct, for the second progress tier. */
+function sectionPosition(section: ConstructSection) {
+  const siblings = CONSTRUCT_SECTIONS.filter((s) => s.part === section.part);
+  return {
+    part: section.part,
+    positionInPart: siblings.findIndex((s) => s.id === section.id) + 1,
+    countInPart: siblings.length,
+  };
 }
 
 // react-hook-form's nested error object is typed loosely for dynamic-key

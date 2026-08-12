@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Thesis manuscript and other documents belong in the Phd folder, not the app repo
+*.docx

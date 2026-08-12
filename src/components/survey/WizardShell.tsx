@@ -1,8 +1,9 @@
-import { ProgressBar } from "./ProgressBar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConstructProgress, type ConstructProgressData } from "./ConstructProgress";
 
 type WizardShellProps = {
   children: React.ReactNode;
-  progress?: { current: number; total: number; label: string };
+  progress?: ConstructProgressData;
   footer?: React.ReactNode;
   headerAction?: React.ReactNode;
 };
@@ -11,13 +12,16 @@ export function WizardShell({ children, progress, footer, headerAction }: Wizard
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-border bg-surface px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-xl items-center justify-between">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
           <span className="text-sm font-semibold tracking-tight">Gym Loyalty Survey</span>
-          {headerAction}
+          <div className="flex items-center gap-3">
+            {headerAction}
+            <ThemeToggle />
+          </div>
         </div>
         {progress && (
-          <div className="mx-auto mt-2 max-w-xl">
-            <ProgressBar currentStep={progress.current} totalSteps={progress.total} label={progress.label} />
+          <div className="mx-auto mt-3 max-w-xl">
+            <ConstructProgress {...progress} />
           </div>
         )}
       </header>

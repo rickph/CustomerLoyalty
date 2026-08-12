@@ -1,42 +1,210 @@
 @import "tailwindcss";
 
+/*
+ * Three theme states, not two: an explicit choice stamps data-theme on <html>,
+ * while the default "system" setting stamps nothing and is resolved by
+ * prefers-color-scheme. Dark values are therefore declared twice — once behind
+ * the media query (guarded so an explicit light choice still wins on a dark OS)
+ * and once behind the attribute (so the toggle wins in both directions).
+ */
 :root {
+  color-scheme: light;
+
   --background: #f7f8fa;
   --foreground: #16181d;
   --surface: #ffffff;
+  --surface-sunk: #f1f3f6;
   --border: #e2e5ea;
   --brand: #0f766e;
   --brand-foreground: #ffffff;
   --brand-soft: #e6f4f2;
   --danger: #b91c1c;
+  --success: #006300;
+
+  /* Series colours for charts only — never used for interactive UI, so a
+     coloured mark is never mistaken for something clickable. Validated for
+     colour-vision separation against both surfaces. */
+  --series-quality: #2a78d6;
+  --series-engagement: #eb6834;
+  --series-trust: #1baf7a;
+  --series-loyalty: #eda100;
+
+  /* Diverging ramp for the 1–5 agreement scale: red ↔ neutral ↔ blue. */
+  --scale-1: #b3261e;
+  --scale-2: #e8827a;
+  --scale-3: #d6d3cd;
+  --scale-4: #86b6ef;
+  --scale-5: #2a78d6;
+
+  --grid: #e1e0d9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --background: #0e0f12;
+    --foreground: #f3f4f6;
+    --surface: #17191d;
+    --surface-sunk: #101216;
+    --border: #2a2d33;
+    --brand: #2dd4bf;
+    --brand-foreground: #05201d;
+    --brand-soft: #12302c;
+    --danger: #f87171;
+    --success: #0ca30c;
+
+    --series-quality: #3987e5;
+    --series-engagement: #d95926;
+    --series-trust: #199e70;
+    --series-loyalty: #c98500;
+
+    --scale-1: #e06b62;
+    --scale-2: #a33028;
+    --scale-3: #4a4a46;
+    --scale-4: #1c5cab;
+    --scale-5: #6da7ec;
+
+    --grid: #2c2c2a;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #0e0f12;
+  --foreground: #f3f4f6;
+  --surface: #17191d;
+  --surface-sunk: #101216;
+  --border: #2a2d33;
+  --brand: #2dd4bf;
+  --brand-foreground: #05201d;
+  --brand-soft: #12302c;
+  --danger: #f87171;
+  --success: #0ca30c;
+
+  --series-quality: #3987e5;
+  --series-engagement: #d95926;
+  --series-trust: #199e70;
+  --series-loyalty: #c98500;
+
+  --scale-1: #e06b62;
+  --scale-2: #a33028;
+  --scale-3: #4a4a46;
+  --scale-4: #1c5cab;
+  --scale-5: #6da7ec;
+
+  --grid: #2c2c2a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
   --color-border: var(--border);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
   --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-grid: var(--grid);
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0e0f12;
-    --foreground: #f3f4f6;
-    --surface: #17191d;
-    --border: #2a2d33;
-    --brand: #2dd4bf;
-    --brand-foreground: #05201d;
-    --brand-soft: #12302c;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* Statistical symbols are italicised in APA; this keeps the markup readable. */
+.apa-sym {
+  font-style: italic;
+}
+
+/*
+ * Print / save-as-PDF. The dashboard is the report, so printing forces the
+ * light palette (a dark page wastes ink and reads badly on paper), keeps chart
+ * fills via print-color-adjust, and stops tables splitting across pages.
+ */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --background: #ffffff;
+    --foreground: #000000;
+    --surface: #ffffff;
+    --surface-sunk: #ffffff;
+    --border: #c9ced6;
+    --brand: #0f766e;
+    --brand-foreground: #ffffff;
+    --brand-soft: #eef6f5;
+    --danger: #b91c1c;
+    --success: #006300;
+    --series-quality: #2a78d6;
+    --series-engagement: #eb6834;
+    --series-trust: #1baf7a;
+    --series-loyalty: #eda100;
+    --grid: #d8dce2;
+  }
+
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  body {
+    background: #ffffff;
+    font-size: 10.5pt;
+  }
+
+  /* Keep bar fills and construct colours on the page. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  figure,
+  table,
+  .print-keep {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  h1,
+  h2 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .print-break-before {
+    break-before: page;
+    page-break-before: page;
+  }
+
+  /* Tables scroll on screen; on paper they must simply fit. */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+  table {
+    min-width: 0 !important;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
