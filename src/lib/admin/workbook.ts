@@ -4,7 +4,13 @@
  * single download carries both the data and the results.
  */
 
-import { CONSTRUCT_SECTIONS, PROFILE_FIELDS, SCREENING_QUESTIONS } from "@/lib/survey/questionnaire";
+import {
+  CONSTRUCT_SECTIONS,
+  LIKERT_SCALE,
+  PROFILE_FIELDS,
+  SCREENING_QUESTIONS,
+} from "@/lib/survey/questionnaire";
+import type { Option } from "@/lib/survey/types";
 import { interpretAlpha, interpretMean } from "./apa";
 import { describeFilters, type Filters } from "./filters";
 import {
@@ -36,6 +42,144 @@ function pValue(value: number): number | string {
   if (!Number.isFinite(value)) return "";
   if (value === 0) return 0;
   return value < 0.0005 ? Number(value.toPrecision(3)) : Number(value.toFixed(4));
+}
+
+/** Excel column reference (A, B, ... AA) for a zero-based index. */
+function columnRef(index: number): string {
+  let n = index + 1;
+  let ref = "";
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    ref = String.fromCharCode(65 + rem) + ref;
+    n = Math.floor((n - 1) / 26);
+  }
+  return ref;
+}
+
+const LIKERT_VALUES = LIKERT_SCALE.map((o) => `${o.value} = ${o.label}`).join("; ");
+
+function optionValues(options?: readonly Option[]): string {
+  if (!options?.length) return "";
+  return options.map((o) => `${o.value} = ${o.label}`).join("; ");
+}
+
+/**
+ * Data dictionary for the Responses sheet: one row per column, giving the
+ * variable name, where it came from in the questionnaire, the full question
+ * wording, and its value labels. Without this the item codes (sq_tan1,
+ * ce_cog2, ...) mean nothing to anyone opening the file in SPSS.
+ */
+function buildCodebookSheet(): Sheet {
+  const rows: (Cell | string | number)[][] = [
+    [
+      bold("Column"),
+      bold("Variable"),
+      bold("Section"),
+      bold("Construct"),
+      bold("Dimension"),
+      bold("Question or statement"),
+      bold("Measurement"),
+      bold("Values"),
+    ],
+  ];
+
+  let col = 0;
+  const add = (
+    variable: string,
+    section: string,
+    construct: string,
+    dimension: string,
+    label: string,
+    measurement: string,
+    values: string
+  ) => {
+    rows.push([
+      columnRef(col++),
+      variable,
+      section,
+      construct,
+      dimension,
+      label,
+      measurement,
+      values,
+    ]);
+  };
+
+  add(
+    "submitted_at",
+    "Record",
+    "",
+    "",
+    "Date and time the response was submitted (ISO 8601, UTC)",
+    "Date",
+    ""
+  );
+
+  for (const q of SCREENING_QUESTIONS) {
+    add(q.id, "Screening", "", "", q.text, "Nominal", optionValues(q.options));
+  }
+
+  for (const field of Object.values(PROFILE_FIELDS)) {
+    const measurement =
+      field.kind === "choice" ? "Nominal" : field.kind === "number" ? "Scale" : "Text";
+    add(
+      field.id,
+      "Part I. Respondent Profile",
+      "",
+      "",
+      field.text,
+      measurement,
+      field.kind === "choice" ? optionValues(field.options) : ""
+    );
+  }
+
+  add("region", "Part I. Respondent Profile", "", "", "Administrative region of the fitness firm", "Nominal", "");
+  add("province", "Part I. Respondent Profile", "", "", "Province or highly urbanized city", "Nominal", "");
+  add("city_municipality", "Part I. Respondent Profile", "", "", "City or municipality", "Nominal", "");
+
+  // Part numbering follows the printed instrument: Part II onwards.
+  const partNumerals = ["II", "III", "IV", "V", "VI", "VII"];
+  const partIndex = new Map<string, string>();
+  for (const section of CONSTRUCT_SECTIONS) {
+    if (!partIndex.has(section.part)) {
+      partIndex.set(section.part, partNumerals[partIndex.size] ?? String(partIndex.size + 2));
+    }
+  }
+
+  for (const section of CONSTRUCT_SECTIONS) {
+    const dimension = section.title.includes("—")
+      ? section.title.split("—").slice(1).join("—").trim()
+      : section.title;
+    for (const item of section.items) {
+      add(
+        item.id,
+        `Part ${partIndex.get(section.part)}. ${section.part}`,
+        section.part,
+        dimension,
+        item.text,
+        "Scale (5-point Likert)",
+        LIKERT_VALUES
+      );
+    }
+  }
+
+  for (const construct of CONSTRUCTS) {
+    add(
+      `SCORE_${construct.replace(/\s+/g, "_").toLowerCase()}`,
+      "Computed",
+      construct,
+      "",
+      `Mean of all ${construct} items for this respondent`,
+      "Scale (1.00-5.00)",
+      "Blank when any item in the scale is unanswered"
+    );
+  }
+
+  return {
+    name: "Codebook",
+    columnWidths: [9, 26, 28, 22, 22, 80, 22, 46],
+    rows,
+  };
 }
 
 export function buildResultsWorkbook(rows: RawRow[], filters: Filters): Buffer {
@@ -78,6 +222,8 @@ export function buildResultsWorkbook(rows: RawRow[], filters: Filters): Buffer {
       }),
     ],
   });
+
+  sheets.push(buildCodebookSheet());
 
   // ------------------------------------------------------------ descriptives
   const descriptives = buildDescriptives(scored);
