@@ -183,14 +183,11 @@ export default async function AdminPage({
           </section>
 
           <section>
-            <h2 className="mb-1 text-base font-semibold">Statistical results</h2>
-            <p className="mb-2 text-sm text-foreground/60">
-              Formatted to APA 7 so the tables can be lifted into Chapter 4.
-            </p>
+            <h2 className="mb-3 text-base font-semibold">Statistical results</h2>
             <p className="mb-6 rounded-lg border border-border bg-surface-sunk px-3.5 py-2.5 text-xs leading-relaxed text-foreground/70">
               These are computed live by the app using ordinary least squares. Your methodology
               chapter specifies PLS-SEM in SmartPLS, which is a different estimator and will not
-              reproduce these coefficients — run the confirmatory analysis on the exported CSV and
+              reproduce these coefficients. Run the confirmatory analysis on the exported data and
               report that. Use this page to watch data quality while collection is running.
             </p>
 
