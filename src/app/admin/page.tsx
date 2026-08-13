@@ -2,19 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE_NAME, isValidAdminSessionToken } from "@/lib/admin/auth";
 import { getDb } from "@/lib/db/client";
-import { apaNumber, interpretMean } from "@/lib/admin/apa";
-import {
-  buildCorrelationMatrix,
-  buildDescriptives,
-  buildFrequencyTables,
-  buildMediations,
-  buildRegression,
-  buildReliability,
-  CONSTRUCTS,
-  OUTCOME,
-  scoreResponses,
-  type RawRow,
-} from "@/lib/admin/results";
+import { scoreResponses, CONSTRUCTS, type RawRow } from "@/lib/admin/results";
 import {
   applyFilters,
   describeFilters,
@@ -26,15 +14,8 @@ import { AdminLoginForm } from "@/components/admin/AdminLoginForm";
 import { LogoutButton } from "@/components/admin/LogoutButton";
 import { FilterBar } from "@/components/admin/FilterBar";
 import { ExportBar } from "@/components/admin/ExportBar";
+import { RawResponsesTable } from "@/components/admin/RawResponsesTable";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import {
-  CorrelationTable,
-  DescriptivesTable,
-  FrequencyTables,
-  MediationTable,
-  RegressionTable,
-  ReliabilityTable,
-} from "@/components/admin/ResultsTables";
 
 export const dynamic = "force-dynamic";
 
@@ -42,13 +23,6 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Survey Results",
   robots: { index: false, follow: false, nocache: true },
-};
-
-const CONSTRUCT_COLOR: Record<string, string> = {
-  "Service Quality": "var(--series-quality)",
-  "Customer Engagement": "var(--series-engagement)",
-  Trust: "var(--series-trust)",
-  "Customer Loyalty": "var(--series-loyalty)",
 };
 
 export default async function AdminPage({
@@ -147,65 +121,7 @@ export default async function AdminPage({
             />
           </section>
 
-          <section className="mb-10">
-            <h2 className="mb-1 text-base font-semibold">Construct averages</h2>
-            <p className="mb-4 text-sm text-foreground/60">
-              Mean of every item in the construct, on the five-point scale.
-            </p>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {CONSTRUCTS.map((name) => {
-                const row = data.descriptives.find((d) => d.label === name && !d.parent);
-                const value = row?.mean ?? NaN;
-                return (
-                  <div
-                    key={name}
-                    className="rounded-xl border border-border bg-surface px-4 py-3"
-                  >
-                    <p className="mb-1.5 text-xs text-foreground/60">{name}</p>
-                    <p className="text-2xl font-semibold leading-none">
-                      {apaNumber(value)}
-                      <span className="text-sm font-normal text-foreground/50"> / 5</span>
-                    </p>
-                    <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-sunk">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${Number.isFinite(value) ? (value / 5) * 100 : 0}%`,
-                          background: CONSTRUCT_COLOR[name] ?? "var(--series-quality)",
-                        }}
-                      />
-                    </div>
-                    <p className="mt-1.5 text-xs text-foreground/50">{interpretMean(value)}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-3 text-base font-semibold">Statistical results</h2>
-            <p className="mb-6 rounded-lg border border-border bg-surface-sunk px-3.5 py-2.5 text-xs leading-relaxed text-foreground/70">
-              These are computed live by the app using ordinary least squares. Your methodology
-              chapter specifies PLS-SEM in SmartPLS, which is a different estimator and will not
-              reproduce these coefficients. Run the confirmatory analysis on the exported data and
-              report that. Use this page to watch data quality while collection is running.
-            </p>
-
-            <FrequencyTables tables={data.frequencies} startNumber={1} />
-            <ReliabilityTable rows={data.reliability} number={2} />
-            <DescriptivesTable rows={data.descriptives} number={3} />
-            <CorrelationTable matrix={data.correlations} number={4} />
-            {data.regression ? (
-              <RegressionTable result={data.regression} outcome={OUTCOME} number={5} />
-            ) : (
-              <NotEnoughData label="Regression" />
-            )}
-            {data.mediations.length > 0 ? (
-              <MediationTable mediations={data.mediations} number={6} />
-            ) : (
-              <NotEnoughData label="Mediation" />
-            )}
-          </section>
+          <RawResponsesTable rows={data.rows} />
 
           <ExportBar query={query} />
             </>
@@ -248,14 +164,6 @@ function EmptyState() {
   );
 }
 
-function NotEnoughData({ label }: { label: string }) {
-  return (
-    <p className="my-8 rounded-lg border border-border bg-surface px-4 py-3 text-sm text-foreground/60">
-      {label} needs more complete cases than are available yet.
-    </p>
-  );
-}
-
 async function loadResults(filters: Filters) {
   try {
     const sql = getDb();
@@ -285,12 +193,7 @@ async function loadResults(filters: Filters) {
       latest: rows[0]?.created_at ?? null,
       regions,
       regionsRepresented: new Set(rows.map((r) => r.region_name).filter(Boolean)).size,
-      frequencies: buildFrequencyTables(rows),
-      reliability: buildReliability(rows),
-      descriptives: buildDescriptives(scored),
-      correlations: buildCorrelationMatrix(scored),
-      regression: buildRegression(scored),
-      mediations: buildMediations(scored),
+      rows,
       error: null as string | null,
     };
   } catch (err) {
@@ -302,12 +205,7 @@ async function loadResults(filters: Filters) {
       latest: null as string | null,
       regions: [] as string[],
       regionsRepresented: 0,
-      frequencies: [],
-      reliability: [],
-      descriptives: [],
-      correlations: { labels: [], cells: [] },
-      regression: null,
-      mediations: [],
+      rows: [] as RawRow[],
       error:
         "Failed to load results. Check that DATABASE_URL is configured (see .env.example).",
     };

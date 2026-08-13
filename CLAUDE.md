@@ -56,7 +56,9 @@ The dashboard is **unlisted by design**: nothing in the respondent-facing UI lin
 
 ### Statistics
 
-The dashboard reports real inferential statistics, formatted to APA 7 so the tables can go straight into the results chapter. Three layers:
+The dashboard itself shows the **raw response data**, not computed statistics: the confirmatory analysis is done by a statistician in SmartPLS on the exported file, so the page deliberately does not display figures that could be mistaken for results. The statistical layer below still exists and still feeds the Excel workbook.  and  are retained but no longer rendered by the page.
+
+Three layers:
 
 - **`src/lib/admin/statistics.ts`** — dependency-free estimators: sample variance/SD, Cronbach's alpha, Pearson's *r* with its *t* test, OLS multiple regression (normal equations + Gauss-Jordan inverse, giving *B*, *SE*, *β*, *t*, *p*, *R²*, adjusted *R²*, *F*), and simple mediation with a percentile bootstrap on the indirect effect. Tail probabilities come from a regularized incomplete beta function, so no stats package is needed. The bootstrap uses a **seeded** PRNG — a confidence interval that changes on page refresh would be unciteable.
 - **`src/lib/admin/results.ts`** — turns raw rows into scored cases (a dimension score is the mean of its items; a construct score the mean of all its items) and builds the table data. Constructs are derived from the `part` field on `CONSTRUCT_SECTIONS`, so adding a dimension flows through automatically.
