@@ -56,7 +56,7 @@ The dashboard is **unlisted by design**: nothing in the respondent-facing UI lin
 
 ### Statistics
 
-The dashboard itself shows the **raw response data**, not computed statistics: the confirmatory analysis is done by a statistician in SmartPLS on the exported file, so the page deliberately does not display figures that could be mistaken for results. The statistical layer below still exists and still feeds the Excel workbook.  and  are retained but no longer rendered by the page.
+The dashboard itself shows the **raw response data**, not computed statistics: the confirmatory analysis is done by a statistician in SmartPLS on the exported file, so the page deliberately does not display figures that could be mistaken for results. The statistical layer below still exists and still feeds the Excel workbook. `ApaTable.tsx` and `ResultsTables.tsx` are retained but no longer rendered by the page.
 
 Three layers:
 
